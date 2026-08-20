@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="40"
+   height="40"
+   viewBox="0 0 10.583334 10.583334"
+   version="1.1"
+   id="svg2719"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs2713">
+    <linearGradient
+       gradientTransform="matrix(-0.66000026,0,0,-0.66000006,336.9685,626.56372)"
+       xlink:href="#linearGradient2768"
+       id="linearGradient2673"
+       x1="501.88306"
+       y1="942.95502"
+       x2="508.08038"
+       y2="935.61182"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       id="linearGradient2768">
+      <stop
+         style="stop-color:#414141;stop-opacity:1"
+         offset="0"
+         id="stop2764" />
+      <stop
+         style="stop-color:#767676;stop-opacity:1"
+         offset="1"
+         id="stop2766" />
+    </linearGradient>
+    <linearGradient
+       gradientTransform="matrix(0.66000026,0,0,0.66000006,-326.18798,-616.02911)"
+       xlink:href="#linearGradient2648"
+       id="linearGradient2665"
+       x1="495.62714"
+       y1="948.00964"
+       x2="508.85629"
+       y2="934.78046"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       id="linearGradient2648">
+      <stop
+         style="stop-color:#ebebeb;stop-opacity:1"
+         offset="0"
+         id="stop2644" />
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1"
+         offset="1"
+         id="stop2646" />
+    </linearGradient>
+    <filter
+       style="color-interpolation-filters:sRGB"
+       id="filter2688"
+       x="-0.12"
+       width="1.24"
+       y="-0.12"
+       height="1.24">
+      <feGaussianBlur
+         stdDeviation="0.66145835"
+         id="feGaussianBlur2690" />
+    </filter>
+    <filter
+       style="color-interpolation-filters:sRGB"
+       id="filter2688-8"
+       x="-0.12"
+       width="1.24"
+       y="-0.12"
+       height="1.24">
+      <feGaussianBlur
+         stdDeviation="0.66145835"
+         id="feGaussianBlur2690-3" />
+    </filter>
+    <linearGradient
+       gradientTransform="matrix(0.66000026,0,0,0.66000006,-326.13626,-615.73698)"
+       xlink:href="#linearGradient2768"
+       id="linearGradient2673-9"
+       x1="501.88306"
+       y1="942.95502"
+       x2="508.08038"
+       y2="935.61182"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <metadata
+     id="metadata2716">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <rect
+     rx="2.0849869"
+     ry="2.0849876"
+     y="281.7106"
+     x="2.3860359"
+     height="13.229167"
+     width="13.229167"
+     id="rect2614"
+     style="display:inline;fill:#000000;fill-opacity:0.530055;fill-rule:nonzero;stroke:none;stroke-width:1.08764;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers stroke fill;filter:url(#filter2688)"
+     transform="matrix(0.66000026,0,0,0.66000006,-0.64874447,-185.00297)" />
+  <path
+     id="rect2603"
+     d="m 1.8342615,0.92604049 h 6.914811 c 0.503155,0 0.908221,0.40506831 0.908221,0.90821941 v 6.914814 c 0,0.5031506 -0.405066,0.9082196 -0.908221,0.9082196 h -6.914811 c -0.503155,0 -0.90822099,-0.405069 -0.90822099,-0.9082196 v -6.914814 c 0,-0.5031511 0.40506599,-0.90821942 0.90822099,-0.90821941 z"
+     style="display:inline;fill:url(#linearGradient2665);fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.717843;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers stroke fill" />
+  <circle
+     style="fill:#000000;stroke:none;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+     id="path1"
+     cx="5.291667"
+     cy="5.291667"
+     r="0.39687502" />
+</svg>
