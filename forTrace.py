@@ -7,8 +7,8 @@ import cv2
 
 os.environ["QT_LOGGING_RULES"] = "qt.svg*=false"
 
-from PySide6.QtCore import    Qt, QPoint, QSize, QEvent, QSettings
-from PySide6.QtGui  import   (QPainter, QImage, QPen, QColor, QIcon, QBrush,
+from PySide6.QtCore import  Qt, QPoint, QSize, QEvent, QSettings
+from PySide6.QtGui  import  (QPainter, QImage, QPen, QColor, QIcon, QBrush,
                             QKeySequence, QPixmap, QMouseEvent,QClipboard,
                             QWheelEvent, QPainterPath, QAction, QShortcut,
                             QCursor, QGuiApplication)
@@ -35,74 +35,50 @@ class CustomGraphicsView(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.NoDrag) #Qt6
         self.panning = False
         self.pan_start_point = QPoint()
-        self.ins_key_pressed = False
+        self.shit_key_pressed = False
 
-    #--- Wacomのペンタブとふつうのマウスが競合するため、マウス無しの時にキーボードで代用する処理を追加した ---#
+    #--- Wacomのペンタブとマウスが競合するため、マウス無しの時にキーボードで代用する処理を追加した ---#
     def keyPressEvent(self, event):
-        # Shift+, Shift-でズーム
+        # +/-キーでズーム
         # ズーム係数を設定（wheelEventと同じ）
         zoom_in_factor = 1.25
         zoom_out_factor = 1 / zoom_in_factor
 
-        # Shiftキーが押されているかどうかの判定
-        # event.modifiers() で現在一緒に押されている修飾キー（ShiftやCtrlなど）を取得できる
-        is_shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+        if event.key() == Qt.Key.Key_Plus:
+            # キー操作の場合はマウス位置ではなく、ビューの中心を基準にズームするのが一般的
+            self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+            self.scale(zoom_in_factor, zoom_in_factor)
+            event.accept()  # イベントを処理したことをシステムに通知
+            return
 
-        if is_shift:
-            # Shiftが押されている、かつテンキーの「+」が押された場合
-            if event.key() == Qt.Key.Key_Plus:
-                # キー操作の場合はマウス位置ではなく、ビューの中心を基準にズームするのが一般的
-                self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
-                self.scale(zoom_in_factor, zoom_in_factor)
-                event.accept()  # イベントを処理したことをシステムに通知
-                return
-
-            # Shiftが押されている、かつテンキーの「-」が押された場合
-            elif event.key() == Qt.Key.Key_Minus:
-                self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
-                self.scale(zoom_out_factor, zoom_out_factor)
-                event.accept()
-                return
-
-        # 上記以外のキー（例：矢印キーでのスクロールなど）は、本来のQGraphicsViewの挙動に任せる
-        super().keyPressEvent(event)
-
-        # テンキーのInsキー（または通常のInsertキー）が押されたとき
-        if event.key() in (Qt.Key.Key_Insert, Qt.Key.Key_0):
-            self.ins_key_pressed = True
+        if event.key() == Qt.Key.Key_Minus:
+            self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+            self.scale(zoom_out_factor, zoom_out_factor)
             event.accept()
             return
 
-        # テンキーのDelキー（または通常のDeleteキー）が押されたとき（リセット処理）
-        elif event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Period):
+        # Escキーを押すと元のサイズに戻る
+        if event.key() == Qt.Key.Key_Escape:
             self.panning = False
             QApplication.restoreOverrideCursor()
             self.resetTransform()   # ズームが取り消され、元のスケールに戻る
             event.accept()
             return
+        
+        # Shiftキーを押しながらペンを動かしてpanning　よくわからない。動かない。
+        is_shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+        if is_shift:
+            QApplication.setOverrideCursor(Qt.CursorShape.ClosedHandCursor)
 
+        # 上記以外のキーは、本来のQGraphicsViewの挙動に任せる
         super().keyPressEvent(event)
-
-    def keyReleaseEvent(self, event):
-        # Insキーが離されたらフラグを戻す
-        if event.key() in (Qt.Key.Key_Insert, Qt.Key.Key_0):
-            self.ins_key_pressed = False
-            # もしドラッグ中にInsキーだけ先に離された場合、パンを終了する
-            if self.panning:
-                self.panning = False
-                QApplication.restoreOverrideCursor()
-            event.accept()
-            return
-
-        super().keyReleaseEvent(event)
+    #--- キーボードで代用処理ここまで ---#
 
     def mousePressEvent(self, event):
-        # 中ボタン、または「Insキーが押されている状態での左ボタン」でパン開始
-        is_ins_left_click = (self.ins_key_pressed and event.button() == Qt.MouseButton.LeftButton)
-        
-        if event.button() == Qt.MouseButton.MiddleButton or is_ins_left_click:
+        # 中ボタンでパン開始
+        if event.button() == Qt.MouseButton.MiddleButton:
             self.panning = True
-            self.pan_start_point = event.pos()
+            self.pan_start_point = event.position().toPoint()
             QApplication.setOverrideCursor(Qt.CursorShape.ClosedHandCursor)
             QApplication.processEvents()   # カーソル変更をすぐに反映
             event.accept() # イベントを消費
@@ -117,12 +93,12 @@ class CustomGraphicsView(QGraphicsView):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        # 移動処理は既存のロジック（self.panning が True なら動く）でそのまま機能します
+        # 移動処理は既存のロジック（self.panning が True なら動く）でそのまま機能する
         if self.panning:
-            delta = self.mapToScene(event.pos()) - self.mapToScene(self.pan_start_point)
+            delta = self.mapToScene(event.position().toPoint()) - self.mapToScene(self.pan_start_point)
             self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
             self.translate(delta.x(), delta.y())
-            self.pan_start_point = event.pos()
+            self.pan_start_point = event.position().toPoint()
             event.accept()
             return
 
@@ -138,8 +114,6 @@ class CustomGraphicsView(QGraphicsView):
                 return
 
         super().mouseReleaseEvent(event)
-    #--- Wacomのペンタブ、Waylandに対処 ここまで---#
-
 
     # マウスホィールイベントwheelEvent()をオーバーライドしてズーム機能を実装する
     # このメソッドはマウスホイールが回転したときに呼び出される。
@@ -149,7 +123,7 @@ class CustomGraphicsView(QGraphicsView):
         zoom_out_factor = 1 / zoom_in_factor
 
         # アンカーを設定（これだけでマウス位置を中心にズームしてくれる）
-        #self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
         # ズーム処理
         if event.angleDelta().y() > 0:
@@ -162,7 +136,7 @@ class CustomGraphicsView(QGraphicsView):
         # 中ボタンでのパン機能
         if event.button() == Qt.MouseButton.MiddleButton:
             self.panning = True
-            self.pan_start_point = event.pos()
+            self.pan_start_point = event.position().toPoint()
             # カーソルを掴んだ手に変更
             QApplication.setOverrideCursor(Qt.CursorShape.ClosedHandCursor)
             QApplication.processEvents()   # カーソル変更をすぐに反映
@@ -170,24 +144,6 @@ class CustomGraphicsView(QGraphicsView):
         elif event.button() == Qt.MouseButton.RightButton:
             self.resetTransform()
         super().mousePressEvent(event)
-
-    '''
-    def mouseMoveEvent(self, event):
-        if self.panning:
-            # 視点の移動量を計算
-            delta = self.mapToScene(event.pos()) - self.mapToScene(self.pan_start_point)
-            # ビューを移動
-            self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
-            self.translate(delta.x(), delta.y())
-            self.pan_start_point = event.pos()
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MouseButton.MiddleButton:
-            self.panning = False
-            QApplication.restoreOverrideCursor()
-        super().mouseReleaseEvent(event)
-    '''
 
 # Canvas: QPainterで描画機能を持つカスタムQLabelクラス
 class Canvas(QLabel):
