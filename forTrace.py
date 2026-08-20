@@ -66,9 +66,9 @@ class CustomGraphicsView(QGraphicsView):
             return
         
         # Shiftキーを押しながらペンを動かしてpanning　よくわからない。動かない。
-        is_shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
-        if is_shift:
-            QApplication.setOverrideCursor(Qt.CursorShape.ClosedHandCursor)
+        #is_shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+        #if is_shift:
+        #    QApplication.setOverrideCursor(Qt.CursorShape.ClosedHandCursor)
 
         # 上記以外のキーは、本来のQGraphicsViewの挙動に任せる
         super().keyPressEvent(event)
