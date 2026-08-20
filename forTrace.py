@@ -11,7 +11,7 @@ from PySide6.QtCore import  Qt, QPoint, QSize, QEvent, QSettings
 from PySide6.QtGui  import  (QPainter, QImage, QPen, QColor, QIcon, QBrush,
                             QKeySequence, QPixmap, QMouseEvent,QClipboard,
                             QWheelEvent, QPainterPath, QAction, QShortcut,
-                            QCursor, QGuiApplication)
+                            QCursor, QGuiApplication, QTabletEvent)
 from PySide6.QtWidgets import (QMainWindow, QApplication, QMenu, QMenuBar,
                             QFileDialog, QWidget, QVBoxLayout,
                             QHBoxLayout, QPushButton, QLabel,
@@ -28,6 +28,7 @@ COLORS = [
 ]
 
 # View: QGraphicsViewを継承するクラス。ズームとパンのロジックを実装できる。
+'''
 class CustomGraphicsView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -37,7 +38,7 @@ class CustomGraphicsView(QGraphicsView):
         self.pan_start_point = QPoint()
         self.shit_key_pressed = False
 
-    #--- Wacomのペンタブとマウスが競合するため、マウス無しの時にキーボードで代用する処理を追加した ---#
+    #--- Wacomのペンタブとマウスが競合するため、マウス無しの時にキーボードで代用する処理を追加 ---#
     def keyPressEvent(self, event):
         # +/-キーでズーム
         # ズーム係数を設定（wheelEventと同じ）
@@ -65,11 +66,6 @@ class CustomGraphicsView(QGraphicsView):
             event.accept()
             return
         
-        # Shiftキーを押しながらペンを動かしてpanning　よくわからない。動かない。
-        #is_shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
-        #if is_shift:
-        #    QApplication.setOverrideCursor(Qt.CursorShape.ClosedHandCursor)
-
         # 上記以外のキーは、本来のQGraphicsViewの挙動に任せる
         super().keyPressEvent(event)
     #--- キーボードで代用処理ここまで ---#
@@ -144,6 +140,147 @@ class CustomGraphicsView(QGraphicsView):
         elif event.button() == Qt.MouseButton.RightButton:
             self.resetTransform()
         super().mousePressEvent(event)
+'''
+
+class CustomGraphicsView(QGraphicsView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self.panning = False
+        self.pan_start_point = QPoint()
+        self.shift_key_pressed = False
+
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # タブレットのトラッキングを有効化(必要に応じて)
+        self.setAttribute(Qt.WidgetAttribute.WA_TabletTracking, True)
+
+    def keyPressEvent(self, event):
+        zoom_in_factor = 1.25
+        zoom_out_factor = 1 / zoom_in_factor
+
+        if event.key() == Qt.Key.Key_Plus:
+            self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+            self.scale(zoom_in_factor, zoom_in_factor)
+            event.accept()
+            return
+
+        if event.key() == Qt.Key.Key_Minus:
+            self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+            self.scale(zoom_out_factor, zoom_out_factor)
+            event.accept()
+            return
+
+        if event.key() == Qt.Key.Key_Escape:
+            self.panning = False
+            QApplication.restoreOverrideCursor()
+            self.resetTransform()
+            event.accept()
+            return
+
+        if event.key() == Qt.Key.Key_Shift:
+            self.shift_key_pressed = True
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key.Key_Shift and not event.isAutoRepeat():
+            self.shift_key_pressed = False
+            if self.panning:
+                self.panning = False
+                QApplication.restoreOverrideCursor()
+            event.accept()
+            return
+
+        super().keyReleaseEvent(event)
+
+    # --- ペン入力はここで処理する ---
+    def tabletEvent(self, event: QTabletEvent):
+        pos = event.position().toPoint()
+
+        if event.type() == QTabletEvent.Type.TabletPress:
+            if self.shift_key_pressed:
+                self.panning = True
+                self.pan_start_point = pos
+                QApplication.processEvents()
+                event.accept()  # ここで消費し、マウスイベントへの変換・Scene側への伝播を防ぐ
+                return
+            # シフトが押されていなければ通常の描画処理へ
+            event.ignore()  # ignoreしてQGraphicsSceneの通常処理(描画)に渡す
+            super().tabletEvent(event)
+            return
+
+        if event.type() == QTabletEvent.Type.TabletMove:
+            if self.panning:
+                delta = self.mapToScene(pos) - self.mapToScene(self.pan_start_point)
+                self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
+                self.translate(delta.x(), delta.y())
+                self.pan_start_point = pos
+                event.accept()
+                return
+            event.ignore()
+            super().tabletEvent(event)
+            return
+
+        if event.type() == QTabletEvent.Type.TabletRelease:
+            if self.panning:
+                self.panning = False
+                QApplication.restoreOverrideCursor()
+                event.accept()
+                return
+            event.ignore()
+            super().tabletEvent(event)
+            return
+
+        super().tabletEvent(event)
+
+    # --- 中ボタン・右ボタンなど、マウス由来の操作はそのまま維持 ---
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self.panning = True
+            self.pan_start_point = event.position().toPoint()
+            QApplication.setOverrideCursor(Qt.CursorShape.ClosedHandCursor)
+            QApplication.processEvents()
+            event.accept()
+            return
+
+        elif event.button() == Qt.MouseButton.RightButton:
+            self.resetTransform()
+            event.accept()
+            return
+
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self.panning:
+            delta = self.mapToScene(event.position().toPoint()) - self.mapToScene(self.pan_start_point)
+            self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
+            self.translate(delta.x(), delta.y())
+            self.pan_start_point = event.position().toPoint()
+            event.accept()
+            return
+
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.MiddleButton:
+            if self.panning:
+                self.panning = False
+                QApplication.restoreOverrideCursor()
+                event.accept()
+                return
+
+        super().mouseReleaseEvent(event)
+
+    def wheelEvent(self, event):
+        zoom_in_factor = 1.1
+        zoom_out_factor = 1 / zoom_in_factor
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        if event.angleDelta().y() > 0:
+            self.scale(zoom_in_factor, zoom_in_factor)
+        else:
+            self.scale(zoom_out_factor, zoom_out_factor)
 
 # Canvas: QPainterで描画機能を持つカスタムQLabelクラス
 class Canvas(QLabel):
@@ -245,14 +382,8 @@ class Canvas(QLabel):
 
     # 線を引く処理（ペイント、パス）
     def mouseMoveEvent(self, e):
-        # 中ボタン移動時は無視
-        '''
-        これが効いてない！！！　直す！！！
-        画面の移動は当面スクロールバーで代用する
-        '''
         if e.buttons() & Qt.MouseButton.MiddleButton:
             return
-
 
         # QPainterをwith構文で安全に開く
         # self.image (QPixmap) に対して描画を行う
